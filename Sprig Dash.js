@@ -90,13 +90,16 @@ setPushables({
   [player]: [player]
 })
 
-const jumpHeight = 2;
+const jumpHeight = 3;
+const moveSpeed = 1;
 let gameRunning = true;
 let score = 0;
 let coolDown = false;
 
+displayScore();
+
 onInput("j", () => {
-  if (!coolDown) {
+  if (!coolDown && gameRunning) {
     getFirst(player).y -= jumpHeight
     coolDown = true;
   }
@@ -113,21 +116,28 @@ afterInput(() => {
 
 
 setInterval(() => {
+  if (gameRunning) {
+    generateEnemy();
+  }
+}, 1500)
+
+setInterval(() => {
   const enemies = getAll(enemy);
   enemies.forEach(e => {
-    e.x -= 1
+    e.x -= moveSpeed;
+  });
+}, 150);
+
+setInterval(() => {
+  const enemies = getAll(enemy);
+  enemies.forEach(e => {
     if (e.x == 0) {
       score++;
-      addText(`${score}`, {
-        x: 2,
-        y: 4,
-        color: color`2`
-      })
+      displayScore();
       e.remove()
     }
   });
-}, 200);
-
+}, 10)
 
 setInterval(() => {
   if (gameRunning) {
@@ -143,7 +153,11 @@ function deleteEnemies() {
 }
 
 function generateEnemy() {
-
+  let amount = Math.floor(Math.random() * (2 - 1 + 1) + 1);
+  
+  for (let i = 0; i < amount; i++) {
+    addSprite(24-i, 8, enemy);
+  }
 }
 
 function checkCollision() {
@@ -161,16 +175,26 @@ function checkCollision() {
   });
 }
 
+function displayScore() {
+  clearText();
+  addText(`${score}`, {
+        x: 1,
+        y: 5,
+        color: color`2`
+  })
+}
+  
+
 function displayGameOver() {
   clearText()
   addText("Game Over", {
-    x: 6,
+    x: 5,
     y: 6,
     color: color`3`
   })
 
   addText(`Score: ${score}`, {
-    x: 6,
+    x: 5,
     y: 8,
     color: color`2`
   })
