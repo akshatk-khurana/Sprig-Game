@@ -13,7 +13,7 @@ const bg = "b"
 const enemy = "e"
 
 setLegend(
-  [ player, bitmap`
+  [player, bitmap`
 6666666666666666
 6666666666666666
 6666666666666666
@@ -30,7 +30,7 @@ setLegend(
 6666666666666666
 6666666666666666
 6666666666666666`],
-  [ bg, bitmap`
+  [bg, bitmap`
 7777777777777777
 7777777777777777
 7777777777777777
@@ -47,7 +47,7 @@ setLegend(
 7777777777777777
 7777777777777777
 7777777777777777`],
-  [ enemy, bitmap `
+  [enemy, bitmap `
 ................
 ................
 ................
@@ -81,32 +81,97 @@ const levels = [
 .........................
 .........................
 .........................
-p..e.e.e.e.e.eee.e.......`
+....p...e....e....e......`
 ]
 
 setMap(levels[level])
 
 setPushables({
-  [ player ]: [ player ]
+  [player]: [player]
 })
 
-
+const jumpHeight = 2;
+let gameRunning = true;
+let score = 0;
 let coolDown = false;
-
-onInput("d", () => {
-    getFirst(player).x += 1
-})
 
 onInput("j", () => {
   if (!coolDown) {
-    getFirst(player).y -= 1
+    getFirst(player).y -= jumpHeight
     coolDown = true;
   }
 })
 
 afterInput(() => {
   setTimeout(() => {
-    getFirst(player).y += 1
-    coolDown = false;
-  }, 200);
+    if (gameRunning) {
+      getFirst(player).y += jumpHeight
+      coolDown = false;
+    }
+  }, 300);
 })
+
+
+setInterval(() => {
+  const enemies = getAll(enemy);
+  enemies.forEach(e => {
+    e.x -= 1
+    if (e.x == 0) {
+      score++;
+      addText(`${score}`, {
+        x: 2,
+        y: 4,
+        color: color`2`
+      })
+      e.remove()
+    }
+  });
+}, 200);
+
+
+setInterval(() => {
+  if (gameRunning) {
+    checkCollision();
+  }
+}, 300)
+
+function deleteEnemies() {
+  const enemies = getAll(enemy);
+  enemies.forEach(e => {
+    e.remove()
+  })
+}
+
+function generateEnemy() {
+
+}
+
+function checkCollision() {
+  const enemies = getAll(enemy);
+  const playerObj = getFirst(player);
+
+  enemies.forEach(enemy => {
+    if (enemy.x === playerObj.x && enemy.y === playerObj.y) {
+      playerObj.remove();
+      gameRunning = false;
+      deleteEnemies();
+      displayGameOver();
+      return
+    }
+  });
+}
+
+function displayGameOver() {
+  clearText()
+  addText("Game Over", {
+    x: 6,
+    y: 6,
+    color: color`3`
+  })
+
+  addText(`Score: ${score}`, {
+    x: 6,
+    y: 8,
+    color: color`2`
+  })
+}
