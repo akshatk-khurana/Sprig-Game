@@ -8,9 +8,10 @@ https://sprig.hackclub.com/gallery/getting_started
 @addedOn: 2024-00-00
 */
 
-const player = "p"
-const bg = "b"
-const enemy = "e"
+const player = "p";
+const bg = "b";
+const enemy = "e";
+const bird = "i";
 
 setLegend(
   [player, bitmap`
@@ -63,7 +64,24 @@ setLegend(
 ...5555555555...
 ..555555555555..
 .55555555555555.
-5555555555555555`]
+5555555555555555`],
+  [bird, bitmap `
+333..........333
+.333........333.
+..333......333..
+...333....333...
+....333..333....
+.....333333.....
+......3333......
+.......33.......
+................
+................
+................
+................
+................
+................
+................
+................`]
 )
 
 setBackground(bg)
@@ -92,11 +110,14 @@ setPushables({
 
 const jumpHeight = 3;
 const moveSpeed = 1;
-let gameRunning = true;
+let gameRunning = false;
 let score = 0;
 let coolDown = false;
 
 displayScore();
+setTimeout(() => {
+  gameRunning = true;
+}, 3000);
 
 onInput("j", () => {
   if (!coolDown && gameRunning) {
@@ -122,33 +143,70 @@ setInterval(() => {
 }, 1500)
 
 setInterval(() => {
-  const enemies = getAll(enemy);
-  enemies.forEach(e => {
-    e.x -= moveSpeed;
-  });
+  if (score >= 5) {
+      generateEnemyBird();
+  }
+}, 2000)
+
+setInterval(() => {
+  if (gameRunning) {
+    moveEnemies();
+  }
 }, 150);
 
 setInterval(() => {
-  const enemies = getAll(enemy);
-  enemies.forEach(e => {
-    if (e.x == 0) {
-      score++;
-      displayScore();
-      e.remove()
-    }
-  });
+  if (gameRunning) {
+    checkOffScreen();
+  }
 }, 10)
 
 setInterval(() => {
   if (gameRunning) {
     checkCollision();
   }
-}, 300)
+}, 10)
+
+function checkOffScreen() {
+  const enemies = getAll(enemy);
+  const birds = getAll(bird);
+  enemies.forEach(e => {
+    if (e.x == 0) {
+      score++;
+      e.remove()
+    }
+  });
+
+  birds.forEach(b => {
+    if (b.x == 0) {
+      score++;
+      b.remove()
+    }
+  });
+  displayScore();
+}
+
+function moveEnemies() {
+  const enemies = getAll(enemy);
+  const birds = getAll(bird);
+  enemies.forEach(e => {
+    e.x -= moveSpeed;
+  });
+
+  birds.forEach(b => {
+    b.x -= moveSpeed;
+  });
+}
 
 function deleteEnemies() {
   const enemies = getAll(enemy);
+  const birds = getAll(bird);
+  
   enemies.forEach(e => {
-    e.remove()
+    e.remove();
+  })
+
+  birds.forEach(b => {
+    b.remove();
   })
 }
 
@@ -160,19 +218,50 @@ function generateEnemy() {
   }
 }
 
+function generateEnemyBird() {
+    addSprite(24, 6, bird);
+}
+
 function checkCollision() {
   const enemies = getAll(enemy);
+  const birds = getAll(bird);
   const playerObj = getFirst(player);
+  let removed = false;
 
   enemies.forEach(enemy => {
-    if (enemy.x === playerObj.x && enemy.y === playerObj.y) {
-      playerObj.remove();
-      gameRunning = false;
-      deleteEnemies();
-      displayGameOver();
-      return
-    }
+    if (getTile(enemy.x, enemy.y).length > 1) {
+        let a = getTile(enemy.x, enemy.y)[0]['_type']
+        let b = getTile(enemy.x, enemy.y)[1]['_type']
+      
+        if (a == player || b == player){
+          playerObj.remove();
+          onGameOver();
+          removed = true;
+          return;
+        }
+      }
   });
+
+  if (!removed) {
+    birds.forEach(bird => {
+      if (getTile(bird.x, bird.y).length > 1) {
+          let a = getTile(bird.x, bird.y)[0]['_type']
+          let b = getTile(bird.x, bird.y)[1]['_type']
+        
+          if (a == player || b == player){
+            playerObj.remove();
+            onGameOver();
+            return;
+          }
+        }
+    });
+  }
+}
+
+function onGameOver() {
+  gameRunning = false;
+  deleteEnemies();
+  displayGameOver();
 }
 
 function displayScore() {
@@ -184,7 +273,6 @@ function displayScore() {
   })
 }
   
-
 function displayGameOver() {
   clearText()
   addText("Game Over", {
